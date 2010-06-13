@@ -23,7 +23,7 @@ public class TestUtilsTest extends TestCase {
     private static final String TEST_BASEDIR_VAL = "/tmp/test";
 
     /**
-     * Test method for {@link TestUtils#getBasedir(Class)}.
+     * Test method for {@link TestUtils#getBaseDir(Class)}.
      */
     public void testGetBasedir() {
         final Properties properties = System.getProperties();

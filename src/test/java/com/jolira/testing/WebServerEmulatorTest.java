@@ -11,6 +11,7 @@ package com.jolira.testing;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import java.io.BufferedReader;
@@ -99,11 +100,7 @@ public class WebServerEmulatorTest {
         };
 
         svr.start();
-
-        final String name = svr.getName();
-
-        assertNotNull(name);
-        svr.stop();
+        svr.getName();
     }
 
     /**
@@ -134,13 +131,11 @@ public class WebServerEmulatorTest {
         final BufferedReader rd = new BufferedReader(new InputStreamReader(in));
 
         try {
-            for (;;) {
-                final String line = rd.readLine();
+            final String line1 = rd.readLine();
+            final String line2 = rd.readLine();
 
-                if (line == null) {
-                    break;
-                }
-            }
+            assertEquals("<response>Hello World</response>", line1);
+            assertNull(line2);
         } finally {
             rd.close();
             svr.stop();
@@ -175,16 +170,40 @@ public class WebServerEmulatorTest {
         final BufferedReader rd = new BufferedReader(new InputStreamReader(in));
 
         try {
-            for (;;) {
-                final String line = rd.readLine();
+            final String line1 = rd.readLine();
+            final String line2 = rd.readLine();
 
-                if (line == null) {
-                    break;
-                }
-            }
+            assertEquals("<response>Hello World</response>", line1);
+            assertNull(line2);
         } finally {
             rd.close();
             svr.stop();
         }
+    }
+
+    /**
+     * Test method for {@link WebServerEmulator#createServer(int)}.
+     * 
+     * @throws Exception
+     */
+    @Test(expected = IllegalStateException.class)
+    public void testStartServerTwice() throws Exception {
+        final WebServerEmulator svr = new WebServerEmulator() {
+            @Override
+            protected Server createServer(final int port) {
+                return new Server();
+            }
+
+            @Override
+            protected void handle(final String target,
+                    final HttpServletRequest request,
+                    final HttpServletResponse response) throws IOException,
+                    ServletException {
+                fail();
+            }
+        };
+
+        svr.start();
+        svr.start();
     }
 }

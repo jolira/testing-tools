@@ -69,6 +69,13 @@ public abstract class WebServerEmulator {
 
     private Server server = null;
 
+    /**
+     * Create the server using a given port. To be overridden by subclasses that need to create different types of
+     * servers (such as ones using HTTPS connectors).
+     * 
+     * @param _port
+     * @return the newly created server
+     */
     protected Server createServer(final int _port) {
         return new Server(_port);
     }
@@ -113,6 +120,18 @@ public abstract class WebServerEmulator {
         return new FileInputStream(_resource);
     }
 
+    /**
+     * Handle an incoming request. This method has to be implemented by subclasses. These implementation should perform
+     * validation on the incoming request and use {@link #respond(HttpServletResponse, InputStream)},
+     * {@link #respond(HttpServletResponse, String)}, and {@link #respond(String, HttpServletResponse, String)} to
+     * return data to the caller.
+     * 
+     * @param target
+     * @param request
+     * @param response
+     * @throws IOException
+     * @throws ServletException
+     */
     protected abstract void handle(final String target,
             final HttpServletRequest request, final HttpServletResponse response)
             throws IOException, ServletException;

@@ -28,7 +28,7 @@ public class TestUtils {
      * that is two levels up from this location (as Maven keeps classes in {@literal basedir/target/classes}.
      * 
      * @param clazz
-     * @return
+     * @return the base directory (according to the default Maven conventions).
      */
     public static String getBaseDir(final Class<?> clazz) {
         final String basedir = System.getProperty(BASEDIR_PROP);
