@@ -3,7 +3,7 @@
   <parent>
     <artifactId>superpom</artifactId>
     <groupId>com.jolira</groupId>
-    <version>1.0.7</version>
+    <version>1.0.9</version>
   </parent>
   <artifactId>testing-tools</artifactId>
   <version>1.0.1-SNAPSHOT</version>
