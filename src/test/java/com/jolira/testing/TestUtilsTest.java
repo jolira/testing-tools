@@ -21,7 +21,7 @@ import junit.framework.TestCase;
  * @author jfk
  */
 public class TestUtilsTest extends TestCase {
-    private static final String TEST_BASEDIR_VAL = "/tmp/test";
+    private static final File TEST_BASEDIR_VAL = new File("/tmp/test");
 
     /**
      * Test method for {@link TestUtils#getBaseDir(Class)}.
@@ -36,7 +36,7 @@ public class TestUtilsTest extends TestCase {
 
             assertNotNull(baseDir);
 
-            properties.setProperty(BASEDIR_PROP, TEST_BASEDIR_VAL);
+            properties.setProperty(BASEDIR_PROP, TEST_BASEDIR_VAL.getAbsolutePath());
 
             final File baseDir2 = getBaseDir(TestUtilsTest.class);
 
