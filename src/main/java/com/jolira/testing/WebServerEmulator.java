@@ -65,6 +65,8 @@ import org.mortbay.jetty.handler.AbstractHandler;
  * @author jfk
  */
 public abstract class WebServerEmulator {
+    private static final String LOCALHOST = "localhost";
+
     private static final int PORT = 16000;
 
     private Server server = null;
@@ -81,12 +83,19 @@ public abstract class WebServerEmulator {
     }
 
     /**
+     * @return {@literal "localhost"}
+     */
+    public String getHostName() {
+        return LOCALHOST;
+    }
+
+    /**
      * @return name and port to be used to access the server
      */
     public String getName() {
         final int port = getPort();
 
-        return "localhost:" + port;
+        return LOCALHOST + ':' + port;
     }
 
     /**
@@ -96,24 +105,21 @@ public abstract class WebServerEmulator {
         final Connector[] connectors = server.getConnectors();
 
         if (connectors == null) {
-            throw new IllegalStateException(
-                    "server must contain at least one connector");
+            throw new IllegalStateException("server must contain at least one connector");
         }
 
         return connectors[0].getPort();
     }
 
-    private InputStream getResourceAsStream(final String resource)
-            throws FileNotFoundException {
-        final InputStream in = WebServerEmulator.class
-                .getResourceAsStream(resource);
+    private InputStream getResourceAsStream(final String resource) throws FileNotFoundException {
+        final InputStream in = WebServerEmulator.class.getResourceAsStream(resource);
 
         if (in != null) {
             return in;
         }
 
         final Class<? extends WebServerEmulator> clazz = this.getClass();
-        final String basedir = getBaseDir(clazz);
+        final File basedir = getBaseDir(clazz);
         final File resources = new File(basedir, "src/test/resources");
         final File _resource = new File(resources, resource);
 
@@ -132,9 +138,8 @@ public abstract class WebServerEmulator {
      * @throws IOException
      * @throws ServletException
      */
-    protected abstract void handle(final String target,
-            final HttpServletRequest request, final HttpServletResponse response)
-            throws IOException, ServletException;
+    protected abstract void handle(final String target, final HttpServletRequest request,
+            final HttpServletResponse response) throws IOException, ServletException;
 
     /**
      * Respond with the content of a particular input stream. This method copied the contents of the stream into the
@@ -147,8 +152,7 @@ public abstract class WebServerEmulator {
      * @throws IOException
      *             bad things happened
      */
-    protected void respond(final HttpServletResponse response,
-            final InputStream in) throws IOException {
+    protected void respond(final HttpServletResponse response, final InputStream in) throws IOException {
         final InputStreamReader _reader = new InputStreamReader(in);
         final BufferedReader reader = new BufferedReader(_reader);
         final ServletOutputStream out = response.getOutputStream();
@@ -179,8 +183,7 @@ public abstract class WebServerEmulator {
      * @throws IOException
      *             something went wrong
      */
-    public void respond(final HttpServletResponse response,
-            final String resource) throws IOException {
+    public void respond(final HttpServletResponse response, final String resource) throws IOException {
         respond("text/xml", response, resource);
     }
 
@@ -196,12 +199,36 @@ public abstract class WebServerEmulator {
      * @throws IOException
      *             something went wrong
      */
-    public void respond(final String mimeType,
-            final HttpServletResponse response, final String resource)
+    public void respond(final String mimeType, final HttpServletResponse response, final File resource)
             throws IOException {
-        final InputStream in = getResourceAsStream(resource);
-
         response.setContentType(mimeType);
+
+        final InputStream in = new FileInputStream(resource);
+
+        try {
+            respond(response, in);
+        } finally {
+            in.close();
+        }
+    }
+
+    /**
+     * Respond with a static file.
+     * 
+     * @param mimeType
+     *            the file type
+     * @param response
+     *            the http response
+     * @param resource
+     *            the file to return
+     * @throws IOException
+     *             something went wrong
+     */
+    public void respond(final String mimeType, final HttpServletResponse response, final String resource)
+            throws IOException {
+        response.setContentType(mimeType);
+
+        final InputStream in = getResourceAsStream(resource);
 
         try {
             respond(response, in);
@@ -227,10 +254,8 @@ public abstract class WebServerEmulator {
 
             server.addHandler(new AbstractHandler() {
                 @Override
-                public void handle(final String target,
-                        final HttpServletRequest request,
-                        final HttpServletResponse response, final int dispatch)
-                        throws IOException, ServletException {
+                public void handle(final String target, final HttpServletRequest request,
+                        final HttpServletResponse response, final int dispatch) throws IOException, ServletException {
                     WebServerEmulator.this.handle(target, request, response);
                 }
             });

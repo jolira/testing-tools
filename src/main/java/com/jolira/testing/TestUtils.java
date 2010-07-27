@@ -28,24 +28,31 @@ public class TestUtils {
      * that is two levels up from this location (as Maven keeps classes in {@literal basedir/target/classes}.
      * 
      * @param clazz
+     *            the class to use to determine the basedir.
      * @return the base directory (according to the default Maven conventions).
      */
-    public static String getBaseDir(final Class<?> clazz) {
+    public static File getBaseDir(final Class<?> clazz) {
         final String basedir = System.getProperty(BASEDIR_PROP);
 
         if (basedir != null) {
-            return basedir;
+            return new File(basedir);
         }
 
         final ProtectionDomain pd = clazz.getProtectionDomain();
         final CodeSource cs = pd.getCodeSource();
         final URL location = cs.getLocation();
+        final String protocol = location.getProtocol();
+
+        if (!"file".equals(protocol)) {
+            throw new Error("coude source for class " + clazz
+                    + " is not a directory and cannot be used to determine the project dir: " + location);
+        }
+
         final String classes = location.getFile();
         final File _classes = new File(classes);
         final File target = _classes.getParentFile();
-        final File _basedir = target.getParentFile();
 
-        return _basedir.getAbsolutePath();
+        return target.getParentFile();
     }
 
     private TestUtils() {

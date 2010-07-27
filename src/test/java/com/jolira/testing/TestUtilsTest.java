@@ -12,6 +12,7 @@ package com.jolira.testing;
 import static com.jolira.testing.TestUtils.BASEDIR_PROP;
 import static com.jolira.testing.TestUtils.getBaseDir;
 
+import java.io.File;
 import java.util.Properties;
 
 import junit.framework.TestCase;
@@ -31,13 +32,13 @@ public class TestUtilsTest extends TestCase {
 
         try {
             properties.remove(BASEDIR_PROP);
-            final String baseDir = getBaseDir(TestUtilsTest.class);
+            final File baseDir = getBaseDir(TestUtilsTest.class);
 
             assertNotNull(baseDir);
 
             properties.setProperty(BASEDIR_PROP, TEST_BASEDIR_VAL);
 
-            final String baseDir2 = getBaseDir(TestUtilsTest.class);
+            final File baseDir2 = getBaseDir(TestUtilsTest.class);
 
             assertEquals(TEST_BASEDIR_VAL, baseDir2);
         } finally {
