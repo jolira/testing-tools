@@ -9,6 +9,9 @@
 
 package com.jolira.testing;
 
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 
 import org.mortbay.jetty.Server;
@@ -24,8 +27,27 @@ public abstract class SecureWebServerEmulator extends WebServerEmulator {
     static final String DEFAULT_KEY_PASSWORD = "jolira";
     static final String DEFAULT_KEYSTORE = "/keystore";
 
+    private static URL getDefaultKeystoreURL() {
+        final URL url = SecureWebServerEmulator.class.getResource(DEFAULT_KEYSTORE);
+
+        if (url != null) {
+            return url;
+        }
+
+        final File base = TestUtils.getBaseDir(SecureWebServerEmulator.class);
+        final File keystore = new File(base, "src/main/resources" + DEFAULT_KEYSTORE);
+        final URI uri = keystore.toURI();
+
+        try {
+            return uri.toURL();
+        } catch (final MalformedURLException e) {
+            throw new Error(e);
+        }
+    }
+
     private final String keystoreURL;
     private final String trustPassword;
+
     private final String keyPassword;
 
     /**
@@ -36,8 +58,7 @@ public abstract class SecureWebServerEmulator extends WebServerEmulator {
      * @see "http://www.exampledepot.com/egs/javax.net.ssl/trustall.html"
      */
     public SecureWebServerEmulator() {
-        final URL url = SecureWebServerEmulator.class
-                .getResource(DEFAULT_KEYSTORE);
+        final URL url = getDefaultKeystoreURL();
 
         keystoreURL = url.toExternalForm();
         trustPassword = DEFAULT_TRUST_PASSWORD;
@@ -56,8 +77,7 @@ public abstract class SecureWebServerEmulator extends WebServerEmulator {
      *            the password for the key
      * @see "http://docs.codehaus.org/display/JETTY/How+to+configure+SSL"
      */
-    public SecureWebServerEmulator(final String keystoreURL,
-            final String trustPassword, final String keyPassword) {
+    public SecureWebServerEmulator(final String keystoreURL, final String trustPassword, final String keyPassword) {
         this.keystoreURL = keystoreURL;
         this.trustPassword = trustPassword;
         this.keyPassword = keyPassword;
