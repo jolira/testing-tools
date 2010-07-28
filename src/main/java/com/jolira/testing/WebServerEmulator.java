@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.Writer;
+import java.io.PrintWriter;
 import java.net.BindException;
 
 import javax.servlet.ServletException;
@@ -156,7 +156,7 @@ public abstract class WebServerEmulator {
         final InputStreamReader _reader = new InputStreamReader(in);
         final BufferedReader reader = new BufferedReader(_reader);
         final ServletOutputStream out = response.getOutputStream();
-        final Writer writer = new OutputStreamWriter(out);
+        final PrintWriter writer = new PrintWriter(new OutputStreamWriter(out));
 
         try {
             for (;;) {
@@ -166,7 +166,7 @@ public abstract class WebServerEmulator {
                     break;
                 }
 
-                writer.write(line);
+                writer.println(line);
             }
         } finally {
             writer.close();
