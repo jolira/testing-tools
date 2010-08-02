@@ -5,9 +5,13 @@
 
 package com.jolira.testing;
 
+import static com.jolira.testing.StaticWebContentServer.DEFAULT_MIME_TYPE;
+import static com.jolira.testing.StaticWebContentServer.mimeTypeByExtension;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,6 +53,18 @@ public class CachingRESTProxy {
     private static final String SERVER = "server";
     private static final String USE_SSL = "ssl";
     private static final String HELP = "help";
+
+    /**
+     * @param query
+     * @return the default content type for the query
+     */
+    protected final static String getDefaultContentType(final File query) {
+        final String name = query.getName();
+        final int dot = name.lastIndexOf('.');
+        final String ext = dot == -1 ? null : name.substring(dot);
+
+        return ext == null ? DEFAULT_MIME_TYPE : mimeTypeByExtension.get(ext);
+    }
 
     private static File getPropertiesFile(final File query) {
         return new File(query, ".prp");
@@ -127,9 +143,9 @@ public class CachingRESTProxy {
     }
 
     private final WebServerEmulator server;
-
     private final File cache;
     private final boolean ssl;
+
     private final String backend;
 
     /**
@@ -161,26 +177,20 @@ public class CachingRESTProxy {
         };
     }
 
-    private void cacheResponse(final String query, final File queryDir) throws IOException {
-        if (!queryDir.isDirectory()) {
-            queryDir.mkdirs();
-        }
-
-        final String protocol = ssl ? "https" : "http";
-        final String _url = protocol + "://" + backend + query;
-        final URL url = new URL(_url);
-        final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        final File resourceFile = getResourceFile(queryDir);
-        final InputStream in = connection.getInputStream();
-
-        try {
-            copy(in, resourceFile);
-        } finally {
-            in.close();
-        }
-
+    private void cacheResponse(final File queryDir, final HttpURLConnection connection, final InputStream in)
+            throws IOException, FileNotFoundException {
         final String contentType = connection.getHeaderField(CONTENT_TYPE);
         final int code = connection.getResponseCode();
+        final String defaultContentType = getDefaultContentType(queryDir);
+        final boolean simple = code == HttpServletResponse.SC_OK && defaultContentType.equals(contentType);
+        final File resourceFile = simple ? queryDir : getResourceFile(queryDir);
+
+        copy(in, resourceFile);
+
+        if (simple) {
+            return;
+        }
+
         final Properties prps = new Properties();
 
         prps.put(CONTENT_TYPE, contentType);
@@ -193,6 +203,24 @@ public class CachingRESTProxy {
             prps.store(out, "gerated by " + CachingRESTProxy.class);
         } finally {
             out.close();
+        }
+    }
+
+    private void cacheResponse(final String query, final File queryDir) throws IOException {
+        if (!queryDir.isDirectory()) {
+            queryDir.mkdirs();
+        }
+
+        final String protocol = ssl ? "https" : "http";
+        final String _url = protocol + "://" + backend + query;
+        final URL url = new URL(_url);
+        final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        final InputStream in = connection.getInputStream();
+
+        try {
+            cacheResponse(queryDir, connection, in);
+        } finally {
+            in.close();
         }
     }
 
@@ -218,6 +246,10 @@ public class CachingRESTProxy {
     private CachedResponse getCached(final File query) throws IOException {
         if (!query.exists()) {
             return null;
+        }
+
+        if (query.isFile()) {
+            return getSimpleResponse(query);
         }
 
         final Properties prps = new Properties();
@@ -286,6 +318,25 @@ public class CachingRESTProxy {
      */
     public int getPort() {
         return server.getPort();
+    }
+
+    private CachedResponse getSimpleResponse(final File query) {
+        return new CachedResponse() {
+            @Override
+            String getContentType() {
+                return getDefaultContentType(query);
+            }
+
+            @Override
+            File getResource() {
+                return query;
+            }
+
+            @Override
+            int getStatus() {
+                return HttpServletResponse.SC_OK;
+            }
+        };
     }
 
     /**

@@ -47,13 +47,14 @@ public class StaticWebContentServer extends WebServerEmulator {
         }
     });
 
-    private static final Map<String, String> mimeTypeByExtension = new HashMap<String, String>();
-    private static final String DEFAULT_MIME_TYPE = "unknown/unknown";
+    static final Map<String, String> mimeTypeByExtension = new HashMap<String, String>();
+    static final String DEFAULT_MIME_TYPE = "unknown/unknown";
 
     static {
         mimeTypeByExtension.put(".js", "appliation/json");
         mimeTypeByExtension.put(".html", "text/html");
         mimeTypeByExtension.put(".htm", "text/html");
+        mimeTypeByExtension.put(".css", "text/css");
         mimeTypeByExtension.put(".xml", "text/xml");
     }
 
