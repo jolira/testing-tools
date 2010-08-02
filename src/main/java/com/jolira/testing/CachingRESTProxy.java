@@ -139,21 +139,20 @@ public class CachingRESTProxy {
         final HelpFormatter formatter = new HelpFormatter();
         final Options options = new Options();
 
+        options.addOption("c", CACHE, true, "chache directory (mandatory!)");
         options.addOption("s", SERVER, true, "server name and port number as server:port");
-        options.addOption("c", CACHE, true, "chache directory");
         options.addOption("x", USE_SSL, false, "use ssl");
         options.addOption("?", HELP, false, "display help");
 
         final CommandLine cli = parser.parse(options, args);
-
-        if (cli.hasOption(HELP)) {
-            formatter.printHelp(CachingRESTProxy.class.getName(), options);
-            return;
-        }
-
         final String server = cli.getOptionValue(SERVER);
         final String cache = cli.getOptionValue(CACHE);
         final boolean ssl = cli.hasOption(USE_SSL);
+
+        if (cli.hasOption(HELP) || cache == null) {
+            formatter.printHelp(CachingRESTProxy.class.getName(), options);
+            return;
+        }
 
         final CachingRESTProxy proxy = new CachingRESTProxy(ssl, server, new File(cache));
 
@@ -227,7 +226,11 @@ public class CachingRESTProxy {
         }
     }
 
-    private void cacheResponse(final String query, final File queryDir) throws IOException {
+    private boolean cacheResponse(final String query, final File queryDir) throws IOException {
+        if (backend == null) {
+            return false;
+        }
+
         final String protocol = ssl ? "https" : "http";
         final String _url = protocol + "://" + backend + query;
         final URL url = new URL(_url);
@@ -239,6 +242,8 @@ public class CachingRESTProxy {
         } finally {
             in.close();
         }
+
+        return true;
     }
 
     private void copy(final InputStream in, final File resource) throws IOException {
@@ -395,7 +400,10 @@ public class CachingRESTProxy {
         final File queryDir = getDirectory(query);
 
         while (!handleCachedResponse(queryDir, response)) {
-            cacheResponse(query, queryDir);
+            if (!cacheResponse(query, queryDir)) {
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            }
         }
     }
 
