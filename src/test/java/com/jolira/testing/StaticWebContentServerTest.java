@@ -25,7 +25,7 @@ import org.junit.Test;
  * @since 1.0
  */
 public class StaticWebContentServerTest {
-    private static void read(final String hostName, final int port, final String file) throws MalformedURLException,
+    static void read(final String hostName, final int port, final String file) throws MalformedURLException,
             IOException {
         final URL url = new URL("http", hostName, port, file);
         final URLConnection connection = url.openConnection();
