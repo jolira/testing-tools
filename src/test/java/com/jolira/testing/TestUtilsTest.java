@@ -44,6 +44,8 @@ public class TestUtilsTest extends TestCase {
         } finally {
             if (org != null) {
                 properties.setProperty(BASEDIR_PROP, org);
+            } else {
+                properties.remove(BASEDIR_PROP);
             }
         }
     }

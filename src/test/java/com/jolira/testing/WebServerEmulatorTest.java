@@ -43,19 +43,15 @@ public class WebServerEmulatorTest {
     public void testCreate2Servers() throws Exception {
         final WebServerEmulator svr1 = new WebServerEmulator() {
             @Override
-            protected void handle(final String target,
-                    final HttpServletRequest request,
-                    final HttpServletResponse response) throws IOException,
-                    ServletException {
+            protected void handle(final String target, final HttpServletRequest request,
+                    final HttpServletResponse response) throws IOException, ServletException {
                 fail();
             }
         };
         final WebServerEmulator svr2 = new WebServerEmulator() {
             @Override
-            protected void handle(final String target,
-                    final HttpServletRequest request,
-                    final HttpServletResponse response) throws IOException,
-                    ServletException {
+            protected void handle(final String target, final HttpServletRequest request,
+                    final HttpServletResponse response) throws IOException, ServletException {
                 fail();
             }
         };
@@ -91,10 +87,8 @@ public class WebServerEmulatorTest {
             }
 
             @Override
-            protected void handle(final String target,
-                    final HttpServletRequest request,
-                    final HttpServletResponse response) throws IOException,
-                    ServletException {
+            protected void handle(final String target, final HttpServletRequest request,
+                    final HttpServletResponse response) throws IOException, ServletException {
                 fail();
             }
         };
@@ -112,10 +106,8 @@ public class WebServerEmulatorTest {
     public void testResponse() throws Exception {
         final WebServerEmulator svr = new WebServerEmulator() {
             @Override
-            protected void handle(final String target,
-                    final HttpServletRequest request,
-                    final HttpServletResponse response) throws IOException,
-                    ServletException {
+            protected void handle(final String target, final HttpServletRequest request,
+                    final HttpServletResponse response) throws IOException, ServletException {
                 assertEquals(TEST_TARGET, target);
 
                 respond(response, "/response.xml");
@@ -127,6 +119,9 @@ public class WebServerEmulatorTest {
         final String name = svr.getName();
         final URL url = new URL("http://" + name + TEST_TARGET);
         final URLConnection conn = url.openConnection();
+
+        conn.setReadTimeout(5000);
+
         final InputStream in = conn.getInputStream();
         final BufferedReader rd = new BufferedReader(new InputStreamReader(in));
 
@@ -151,10 +146,8 @@ public class WebServerEmulatorTest {
     public void testResponse2() throws Exception {
         final WebServerEmulator svr = new WebServerEmulator() {
             @Override
-            protected void handle(final String target,
-                    final HttpServletRequest request,
-                    final HttpServletResponse response) throws IOException,
-                    ServletException {
+            protected void handle(final String target, final HttpServletRequest request,
+                    final HttpServletResponse response) throws IOException, ServletException {
                 assertEquals(TEST_TARGET, target);
 
                 respond(response, "response.xml");
@@ -166,6 +159,9 @@ public class WebServerEmulatorTest {
         final String name = svr.getName();
         final URL url = new URL("http://" + name + TEST_TARGET);
         final URLConnection conn = url.openConnection();
+
+        conn.setReadTimeout(5000);
+
         final InputStream in = conn.getInputStream();
         final BufferedReader rd = new BufferedReader(new InputStreamReader(in));
 
@@ -195,10 +191,8 @@ public class WebServerEmulatorTest {
             }
 
             @Override
-            protected void handle(final String target,
-                    final HttpServletRequest request,
-                    final HttpServletResponse response) throws IOException,
-                    ServletException {
+            protected void handle(final String target, final HttpServletRequest request,
+                    final HttpServletResponse response) throws IOException, ServletException {
                 fail();
             }
         };

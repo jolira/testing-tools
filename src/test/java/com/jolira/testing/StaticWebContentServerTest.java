@@ -29,6 +29,9 @@ public class StaticWebContentServerTest {
             IOException {
         final URL url = new URL("http", hostName, port, file);
         final URLConnection connection = url.openConnection();
+
+        connection.setReadTimeout(5000);
+
         final InputStream in = connection.getInputStream();
         final BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 
