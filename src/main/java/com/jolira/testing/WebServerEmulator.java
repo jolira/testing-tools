@@ -66,7 +66,6 @@ import org.mortbay.jetty.handler.AbstractHandler;
  */
 public abstract class WebServerEmulator {
     private static final String LOCALHOST = "localhost";
-
     private static final int PORT = 16000;
 
     private Server server = null;
@@ -80,6 +79,31 @@ public abstract class WebServerEmulator {
      */
     protected Server createServer(final int _port) {
         return new Server(_port);
+    }
+
+    /**
+     * @see Object#equals(Object)
+     */
+    @Override
+    public boolean equals(final Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final WebServerEmulator other = (WebServerEmulator) obj;
+        if (server == null) {
+            if (other.server != null) {
+                return false;
+            }
+        } else if (!server.equals(other.server)) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -140,6 +164,17 @@ public abstract class WebServerEmulator {
      */
     protected abstract void handle(final String target, final HttpServletRequest request,
             final HttpServletResponse response) throws IOException, ServletException;
+
+    /**
+     * @see Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (server == null ? 0 : server.hashCode());
+        return result;
+    }
 
     /**
      * Respond with the content of a particular input stream. This method copied the contents of the stream into the
@@ -278,5 +313,19 @@ public abstract class WebServerEmulator {
      */
     public void stop() throws Exception {
         server.stop();
+    }
+
+    /**
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        final StringBuilder builder = new StringBuilder();
+
+        builder.append("WebServerEmulator [server=");
+        builder.append(server);
+        builder.append("]");
+
+        return builder.toString();
     }
 }

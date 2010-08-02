@@ -46,6 +46,7 @@ public abstract class SecureWebServerEmulator extends WebServerEmulator {
     }
 
     private final String keystoreURL;
+
     private final String trustPassword;
 
     private final String keyPassword;
@@ -95,5 +96,75 @@ public abstract class SecureWebServerEmulator extends WebServerEmulator {
         svr.addConnector(connector);
 
         return svr;
+    }
+
+    /**
+     * @see Object#equals(Object)
+     */
+    @Override
+    public boolean equals(final Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!super.equals(obj)) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final SecureWebServerEmulator other = (SecureWebServerEmulator) obj;
+        if (keyPassword == null) {
+            if (other.keyPassword != null) {
+                return false;
+            }
+        } else if (!keyPassword.equals(other.keyPassword)) {
+            return false;
+        }
+        if (keystoreURL == null) {
+            if (other.keystoreURL != null) {
+                return false;
+            }
+        } else if (!keystoreURL.equals(other.keystoreURL)) {
+            return false;
+        }
+        if (trustPassword == null) {
+            if (other.trustPassword != null) {
+                return false;
+            }
+        } else if (!trustPassword.equals(other.trustPassword)) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * @see Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = super.hashCode();
+        result = prime * result + (keyPassword == null ? 0 : keyPassword.hashCode());
+        result = prime * result + (keystoreURL == null ? 0 : keystoreURL.hashCode());
+        result = prime * result + (trustPassword == null ? 0 : trustPassword.hashCode());
+        return result;
+    }
+
+    /**
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        final StringBuilder builder = new StringBuilder();
+
+        builder.append("SecureWebServerEmulator [keyPassword=");
+        builder.append(keyPassword);
+        builder.append(", keystoreURL=");
+        builder.append(keystoreURL);
+        builder.append(", trustPassword=");
+        builder.append(trustPassword);
+        builder.append("]");
+
+        return builder.toString();
     }
 }
