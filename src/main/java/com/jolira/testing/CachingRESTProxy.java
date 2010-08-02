@@ -23,8 +23,12 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Enumeration;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.TreeMap;
+import java.util.Map.Entry;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -76,18 +80,13 @@ public class CachingRESTProxy {
 
         buf.append(target);
 
-        @SuppressWarnings("unchecked")
-        final Enumeration<String> names = request.getParameterNames();
-
-        if (names == null) {
-            return buf.toString();
-        }
-
+        final Map<String, String[]> params = getSortedParameters(request);
+        final Set<Entry<String, String[]>> entries = params.entrySet();
         boolean first = true;
 
-        while (names.hasMoreElements()) {
-            final String name = names.nextElement();
-            final String[] vals = request.getParameterValues(name);
+        for (final Entry<String, String[]> entry : entries) {
+            final String name = entry.getKey();
+            final String[] vals = entry.getValue();
 
             for (final String val : vals) {
                 final String encoded = URLEncoder.encode(val, ENCODING);
@@ -110,6 +109,25 @@ public class CachingRESTProxy {
 
     private static File getResourceFile(final File query) {
         return new File(query, ".dmp");
+    }
+
+    private static Map<String, String[]> getSortedParameters(final HttpServletRequest request) {
+        final Map<String, String[]> params = new TreeMap<String, String[]>();
+        @SuppressWarnings("unchecked")
+        final Enumeration<String> names = request.getParameterNames();
+
+        if (names == null) {
+            return params;
+        }
+
+        while (names.hasMoreElements()) {
+            final String name = names.nextElement();
+            final String[] vals = request.getParameterValues(name);
+
+            params.put(name, vals);
+        }
+
+        return params;
     }
 
     /**
@@ -182,7 +200,7 @@ public class CachingRESTProxy {
         final String contentType = connection.getHeaderField(CONTENT_TYPE);
         final int code = connection.getResponseCode();
         final String defaultContentType = getDefaultContentType(queryDir);
-        final boolean simple = code == HttpServletResponse.SC_OK && defaultContentType.equals(contentType);
+        final boolean simple = code == HttpServletResponse.SC_OK && equalsContentType(defaultContentType, contentType);
         final File resourceFile = simple ? queryDir : getResourceFile(queryDir);
 
         copy(in, resourceFile);
@@ -193,7 +211,10 @@ public class CachingRESTProxy {
 
         final Properties prps = new Properties();
 
-        prps.put(CONTENT_TYPE, contentType);
+        if (contentType != null) {
+            prps.put(CONTENT_TYPE, contentType);
+        }
+
         prps.put(STATUS_PROPERTY, Integer.toString(code));
 
         final File propertiesFile = getPropertiesFile(queryDir);
@@ -243,6 +264,27 @@ public class CachingRESTProxy {
         } finally {
             writer.close();
         }
+    }
+
+    private boolean equalsContentType(final String type1, final String type2) {
+        if (type1 == null) {
+            return type2 == null;
+        }
+
+        final String _type1 = getBaseContentType(type1);
+        final String _type2 = getBaseContentType(type2);
+
+        return _type1.equals(_type2);
+    }
+
+    private String getBaseContentType(final String type) {
+        final int idx = type.indexOf(';');
+
+        if (idx == -1) {
+            return type;
+        }
+
+        return type.substring(0, idx);
     }
 
     private CachedResponse getCached(final File query) throws IOException {

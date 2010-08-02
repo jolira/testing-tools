@@ -51,11 +51,14 @@ public class StaticWebContentServer extends WebServerEmulator {
     static final String DEFAULT_MIME_TYPE = "unknown/unknown";
 
     static {
-        mimeTypeByExtension.put(".js", "appliation/json");
+        mimeTypeByExtension.put(".js", "text/javascript");
         mimeTypeByExtension.put(".html", "text/html");
         mimeTypeByExtension.put(".htm", "text/html");
         mimeTypeByExtension.put(".css", "text/css");
         mimeTypeByExtension.put(".xml", "text/xml");
+        mimeTypeByExtension.put(".gif", "image/gif");
+        mimeTypeByExtension.put(".jpg", "image/jpeg");
+        mimeTypeByExtension.put(".png", "image/png");
     }
 
     /**
