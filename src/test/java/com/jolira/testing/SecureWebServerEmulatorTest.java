@@ -16,9 +16,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -39,22 +42,38 @@ public class SecureWebServerEmulatorTest {
     private static final String TEST_TARGET = "/secure";
 
     /**
+     * @return
+     * @throws MalformedURLException
+     */
+    private URL getKeyStore() throws MalformedURLException {
+        final URL url = SecureWebServerEmulator.class.getResource(DEFAULT_KEYSTORE);
+
+        if (url != null) {
+            return url;
+        }
+
+        final File baseDir = TestUtils.getBaseDir(SecureWebServerEmulator.class);
+        final File resources = new File(baseDir, "src/main/resources");
+        final File keyStore = new File(resources, DEFAULT_KEYSTORE);
+        final URI uri = keyStore.toURI();
+
+        return uri.toURL();
+    }
+
+    /**
      * Test method for {@link SecureWebServerEmulator#SecureWebServerEmulator()}.
      * 
      * @throws Exception
      */
     @Test
     public void testCustomerKeyStore() throws Exception {
-        final URL url = SecureWebServerEmulator.class
-                .getResource(DEFAULT_KEYSTORE);
+        final URL url = getKeyStore();
         final String _url = url.toExternalForm();
-        final SecureWebServerEmulator svr = new SecureWebServerEmulator(_url,
-                DEFAULT_TRUST_PASSWORD, DEFAULT_KEY_PASSWORD) {
+        final SecureWebServerEmulator svr = new SecureWebServerEmulator(_url, DEFAULT_TRUST_PASSWORD,
+                DEFAULT_KEY_PASSWORD) {
             @Override
-            protected void handle(final String target,
-                    final HttpServletRequest request,
-                    final HttpServletResponse response) throws IOException,
-                    ServletException {
+            protected void handle(final String target, final HttpServletRequest request,
+                    final HttpServletResponse response) throws IOException, ServletException {
                 assertEquals(TEST_TARGET, target);
 
                 respond(response, "response.xml");
@@ -66,15 +85,11 @@ public class SecureWebServerEmulatorTest {
         // BEGIN: http://www.exampledepot.com/egs/javax.net.ssl/trustall.html
         // Create a trust manager that does not validate certificate chains
         final TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
-            public void checkClientTrusted(
-                    final java.security.cert.X509Certificate[] certs,
-                    final String authType) {
+            public void checkClientTrusted(final java.security.cert.X509Certificate[] certs, final String authType) {
                 // empty
             }
 
-            public void checkServerTrusted(
-                    final java.security.cert.X509Certificate[] certs,
-                    final String authType) {
+            public void checkServerTrusted(final java.security.cert.X509Certificate[] certs, final String authType) {
                 // empty
             }
 
@@ -117,10 +132,8 @@ public class SecureWebServerEmulatorTest {
     public void testSecureWebServerEmulator() throws Exception {
         final SecureWebServerEmulator svr = new SecureWebServerEmulator() {
             @Override
-            protected void handle(final String target,
-                    final HttpServletRequest request,
-                    final HttpServletResponse response) throws IOException,
-                    ServletException {
+            protected void handle(final String target, final HttpServletRequest request,
+                    final HttpServletResponse response) throws IOException, ServletException {
                 assertEquals(TEST_TARGET, target);
 
                 respond(response, "response.xml");
@@ -132,15 +145,11 @@ public class SecureWebServerEmulatorTest {
         // BEGIN: http://www.exampledepot.com/egs/javax.net.ssl/trustall.html
         // Create a trust manager that does not validate certificate chains
         final TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
-            public void checkClientTrusted(
-                    final java.security.cert.X509Certificate[] certs,
-                    final String authType) {
+            public void checkClientTrusted(final java.security.cert.X509Certificate[] certs, final String authType) {
                 // empty
             }
 
-            public void checkServerTrusted(
-                    final java.security.cert.X509Certificate[] certs,
-                    final String authType) {
+            public void checkServerTrusted(final java.security.cert.X509Certificate[] certs, final String authType) {
                 // empty
             }
 

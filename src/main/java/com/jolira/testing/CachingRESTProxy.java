@@ -207,10 +207,6 @@ public class CachingRESTProxy {
     }
 
     private void cacheResponse(final String query, final File queryDir) throws IOException {
-        if (!queryDir.isDirectory()) {
-            queryDir.mkdirs();
-        }
-
         final String protocol = ssl ? "https" : "http";
         final String _url = protocol + "://" + backend + query;
         final URL url = new URL(_url);
@@ -225,6 +221,12 @@ public class CachingRESTProxy {
     }
 
     private void copy(final InputStream in, final File resource) throws IOException {
+        final File dir = resource.getParentFile();
+
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+
         final BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         final PrintWriter writer = new PrintWriter(resource);
 
