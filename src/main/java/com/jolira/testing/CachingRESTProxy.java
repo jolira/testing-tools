@@ -47,7 +47,7 @@ import org.apache.commons.cli.Parser;
  * REST has a number of wonderful characteristics. One of which is that it can be cached very easily. This class allows
  * for easy caching. This class is such proxy that employs caching for backend systems. The backend is only called if
  * the entry is not found in the cache.
- *
+ * 
  * @author jfk
  * @date Aug 1, 2010 9:12:44 PM
  * @since 1.0
@@ -181,7 +181,7 @@ public class CachingRESTProxy {
 
     /**
      * Create a new proxy.
-     *
+     * 
      * @param ssl
      *            {@literal true} to indicate that the server uses SSL.
      * @param server
@@ -258,19 +258,19 @@ public class CachingRESTProxy {
         final Cookie[] cookies = request.getCookies();
 
         if (cookies != null) {
-        final StringBuilder cookieVal = new StringBuilder();
+            final StringBuilder cookieVal = new StringBuilder();
 
-        for (final Cookie cookie : cookies) {
-            final String value = cookie.getValue();
-            final String name = cookie.getName();
+            for (final Cookie cookie : cookies) {
+                final String value = cookie.getValue();
+                final String name = cookie.getName();
 
-            cookieVal.append(name);
-            cookieVal.append('=');
-            cookieVal.append(value);
-            cookieVal.append(';');
-        }
+                cookieVal.append(name);
+                cookieVal.append('=');
+                cookieVal.append(value);
+                cookieVal.append(';');
+            }
 
-        connection.setRequestProperty("Cookie", cookieVal.toString());
+            connection.setRequestProperty("Cookie", cookieVal.toString());
         }
 
         final InputStream in = connection.getInputStream();
@@ -342,6 +342,11 @@ public class CachingRESTProxy {
 
         final Properties prps = new Properties();
         final File propertiesFile = getPropertiesFile(query);
+
+        if (!propertiesFile.exists()) {
+            return null;
+        }
+
         final File resourceFile = getResourceFile(query);
         final InputStream in = new FileInputStream(propertiesFile);
 
