@@ -95,18 +95,31 @@ public class CachingRESTProxyTest {
     public void testProxy() throws Exception {
         final File cacheDir = getCacheDir();
         final String backendName = backend.getName();
-        final CachingRESTProxy proxy = new CachingRESTProxy(false, backendName, cacheDir);
+        final CachingRESTProxy proxy1 = new CachingRESTProxy(false, backendName, cacheDir);
 
         try {
-            proxy.start();
+            proxy1.start();
 
-            final String hostName = proxy.getHostName();
-            final int port = proxy.getPort();
+            final String hostName = proxy1.getHostName();
+            final int port = proxy1.getPort();
 
             read(hostName, port, "/index.html");
             read(hostName, port, "/index.html");
         } finally {
-            proxy.stop();
+            proxy1.stop();
+        }
+
+        final CachingRESTProxy proxy2 = new CachingRESTProxy(false, null, cacheDir);
+
+        try {
+            proxy2.start();
+
+            final String hostName = proxy2.getHostName();
+            final int port = proxy2.getPort();
+
+            read(hostName, port, "/index.html");
+        } finally {
+            proxy2.stop();
         }
     }
 }
