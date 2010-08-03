@@ -7,22 +7,24 @@ package com.jolira.testing;
 
 import static com.jolira.testing.StaticWebContentServer.DEFAULT_MIME_TYPE;
 import static com.jolira.testing.StaticWebContentServer.mimeTypeByExtension;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static javax.servlet.http.HttpServletResponse.SC_OK;
 
-import java.io.BufferedReader;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -31,6 +33,7 @@ import java.util.TreeMap;
 import java.util.Map.Entry;
 
 import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -50,6 +53,17 @@ import org.apache.commons.cli.Parser;
  * @since 1.0
  */
 public class CachingRESTProxy {
+    static abstract class CachedResponse {
+        abstract String getContentType();
+
+        abstract Map<String, String> getHeaders();
+
+        abstract File getResource();
+
+        abstract int getStatus();
+    }
+
+    private static final String SET_COOKIE = "Set-Cookie";
     private static final String ENCODING = System.getProperty("file.encoding");
     private static final String STATUS_PROPERTY = "status";
     private static final String CONTENT_TYPE = "Content-Type";
@@ -199,8 +213,9 @@ public class CachingRESTProxy {
         final String contentType = connection.getHeaderField(CONTENT_TYPE);
         final int code = connection.getResponseCode();
         final String defaultContentType = getDefaultContentType(queryDir);
-        final boolean simple = code == HttpServletResponse.SC_OK && equalsContentType(defaultContentType, contentType);
+        final boolean simple = code == SC_OK && equalsContentType(defaultContentType, contentType);
         final File resourceFile = simple ? queryDir : getResourceFile(queryDir);
+        final String cookies = connection.getHeaderField(SET_COOKIE);
 
         copy(in, resourceFile);
 
@@ -212,6 +227,10 @@ public class CachingRESTProxy {
 
         if (contentType != null) {
             prps.put(CONTENT_TYPE, contentType);
+        }
+
+        if (cookies != null) {
+            prps.put(SET_COOKIE, cookies);
         }
 
         prps.put(STATUS_PROPERTY, Integer.toString(code));
@@ -226,7 +245,8 @@ public class CachingRESTProxy {
         }
     }
 
-    private boolean cacheResponse(final String query, final File queryDir) throws IOException {
+    private boolean cacheResponse(final String query, final File queryDir, final HttpServletRequest request,
+            final HttpServletResponse response) throws IOException {
         if (backend == null) {
             return false;
         }
@@ -235,6 +255,24 @@ public class CachingRESTProxy {
         final String _url = protocol + "://" + backend + query;
         final URL url = new URL(_url);
         final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        final Cookie[] cookies = request.getCookies();
+
+        if (cookies != null) {
+            final StringBuilder cookieVal = new StringBuilder();
+
+            for (final Cookie cookie : cookies) {
+                final String value = cookie.getValue();
+                final String name = cookie.getName();
+
+                cookieVal.append(name);
+                cookieVal.append('=');
+                cookieVal.append(value);
+                cookieVal.append(';');
+            }
+
+            connection.setRequestProperty("Cookie", cookieVal.toString());
+        }
+
         final InputStream in = connection.getInputStream();
 
         try {
@@ -253,21 +291,22 @@ public class CachingRESTProxy {
             dir.mkdirs();
         }
 
-        final BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-        final PrintWriter writer = new PrintWriter(resource);
+        final OutputStream out = new BufferedOutputStream(new FileOutputStream(resource));
 
         try {
-            for (;;) {
-                final String line = reader.readLine();
+            final byte[] buffer = new byte[65535];
 
-                if (line == null) {
+            for (;;) {
+                final int read = in.read(buffer);
+
+                if (read == -1) {
                     break;
                 }
 
-                writer.println(line);
+                out.write(buffer, 0, read);
             }
         } finally {
-            writer.close();
+            out.close();
         }
     }
 
@@ -316,6 +355,16 @@ public class CachingRESTProxy {
             @Override
             String getContentType() {
                 return prps.getProperty(CONTENT_TYPE);
+            }
+
+            @Override
+            Map<String, String> getHeaders() {
+                final String cookies = prps.getProperty(SET_COOKIE);
+                final Map<String, String> headers = new HashMap<String, String>();
+
+                headers.put(SET_COOKIE, cookies);
+
+                return headers;
             }
 
             @Override
@@ -377,13 +426,18 @@ public class CachingRESTProxy {
             }
 
             @Override
+            Map<String, String> getHeaders() {
+                return null;
+            }
+
+            @Override
             File getResource() {
                 return query;
             }
 
             @Override
             int getStatus() {
-                return HttpServletResponse.SC_OK;
+                return SC_OK;
             }
         };
     }
@@ -400,8 +454,8 @@ public class CachingRESTProxy {
         final File queryDir = getDirectory(query);
 
         while (!handleCachedResponse(queryDir, response)) {
-            if (!cacheResponse(query, queryDir)) {
-                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            if (!cacheResponse(query, queryDir, request, response)) {
+                response.setStatus(SC_NOT_FOUND);
                 return;
             }
         }
@@ -417,7 +471,18 @@ public class CachingRESTProxy {
         final int status = cached.getStatus();
         final String mimeType = cached.getContentType();
         final File resource = cached.getResource();
+        final Map<String, String> headers = cached.getHeaders();
 
+        if (headers != null) {
+            final Collection<Entry<String, String>> entries = headers.entrySet();
+
+            for (final Entry<String, String> entry : entries) {
+                final String name = entry.getKey();
+                final String value = entry.getValue();
+
+                response.setHeader(name, value);
+            }
+        }
         response.setStatus(status);
         respond(mimeType, response, resource);
 

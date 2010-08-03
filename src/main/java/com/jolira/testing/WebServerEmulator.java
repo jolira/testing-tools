@@ -5,15 +5,11 @@ package com.jolira.testing;
 
 import static com.jolira.testing.TestUtils.getBaseDir;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.net.BindException;
 
 import javax.servlet.ServletException;
@@ -188,23 +184,22 @@ public abstract class WebServerEmulator {
      *             bad things happened
      */
     protected void respond(final HttpServletResponse response, final InputStream in) throws IOException {
-        final InputStreamReader _reader = new InputStreamReader(in);
-        final BufferedReader reader = new BufferedReader(_reader);
         final ServletOutputStream out = response.getOutputStream();
-        final PrintWriter writer = new PrintWriter(new OutputStreamWriter(out));
 
         try {
-            for (;;) {
-                final String line = reader.readLine();
+            final byte[] buffer = new byte[65535];
 
-                if (line == null) {
+            for (;;) {
+                final int read = in.read(buffer);
+
+                if (read == -1) {
                     break;
                 }
 
-                writer.println(line);
+                out.write(buffer, 0, read);
             }
         } finally {
-            writer.close();
+            out.close();
         }
     }
 
