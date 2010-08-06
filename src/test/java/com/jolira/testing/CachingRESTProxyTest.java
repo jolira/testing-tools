@@ -5,10 +5,23 @@
 
 package com.jolira.testing;
 
-import static com.jolira.testing.StaticWebContentServerTest.read;
+import static org.junit.Assert.assertEquals;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -34,6 +47,35 @@ public class CachingRESTProxyTest {
         return tmp;
     }
 
+    static void read(final String hostName, final int port, final String file) throws MalformedURLException,
+            IOException {
+        final URL url = new URL("http", hostName, port, file);
+        final URLConnection connection = url.openConnection();
+
+        connection.setReadTimeout(5000);
+
+        final InputStream in = connection.getInputStream();
+        final BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+
+        try {
+            final String line = reader.readLine();
+
+            assertEquals("<html><head><title>Test!</title></head><body><h1>Test!</h1></body></html>", line);
+        } finally {
+            reader.close();
+        }
+
+        final Map<String, List<String>> headers = connection.getHeaderFields();
+        final List<String> cookies = headers.get(CachingRESTProxy.SET_COOKIE);
+        final int cookieCount = cookies.size();
+
+        assertEquals(4, cookieCount);
+        assertEquals("a=b", cookies.get(0));
+        assertEquals("c=d", cookies.get(1));
+        assertEquals("e=f;Path=/jolira/test;Domain=jolira.com;Secure", cookies.get(2));
+        assertEquals("g=h", cookies.get(3));
+    }
+
     /**
      * Start a fake backend server
      * 
@@ -44,7 +86,29 @@ public class CachingRESTProxyTest {
         final File base = TestUtils.getBaseDir(CachingRESTProxyTest.class);
         final File dir1 = new File(base, "src/test/resources/dir1");
 
-        backend = new StaticWebContentServer();
+        backend = new StaticWebContentServer() {
+            @Override
+            protected void handle(final String target, final HttpServletRequest request,
+                    final HttpServletResponse response) throws IOException, ServletException {
+                response.addCookie(new Cookie("a", "b"));
+                response.addCookie(new Cookie("c", "d"));
+
+                final Cookie cookie3 = new Cookie("e", "f");
+
+                cookie3.setSecure(true);
+                cookie3.setComment("test");
+                cookie3.setPath("/jolira/test");
+                cookie3.setDomain("jolira.com");
+                cookie3.setMaxAge(3600 * 48);
+
+                response.addCookie(cookie3);
+                response.addCookie(new Cookie("g", "h"));
+                System.out.println("COOKIES!!!!!!!!!!!!");
+
+                super.handle(target, request, response);
+            }
+
+        };
 
         backend.addMapping("/", dir1);
         backend.start();

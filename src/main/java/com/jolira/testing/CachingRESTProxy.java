@@ -22,9 +22,10 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -56,14 +57,14 @@ public class CachingRESTProxy {
     static abstract class CachedResponse {
         abstract String getContentType();
 
-        abstract Map<String, String> getHeaders();
+        abstract Cookie[] getCookies();
 
         abstract File getResource();
 
         abstract int getStatus();
     }
 
-    private static final String SET_COOKIE = "Set-Cookie";
+    static final String SET_COOKIE = "Set-Cookie";
     private static final String ENCODING = System.getProperty("file.encoding");
     private static final String STATUS_PROPERTY = "status";
     private static final String CONTENT_TYPE = "Content-Type";
@@ -71,6 +72,10 @@ public class CachingRESTProxy {
     private static final String SERVER = "server";
     private static final String USE_SSL = "ssl";
     private static final String HELP = "help";
+
+    private static String getCookieKey(final int idx) {
+        return SET_COOKIE + '.' + idx;
+    }
 
     /**
      * @param query
@@ -175,6 +180,7 @@ public class CachingRESTProxy {
 
     private final WebServerEmulator server;
     private final File cache;
+
     private final boolean ssl;
 
     private final String backend;
@@ -213,9 +219,10 @@ public class CachingRESTProxy {
         final String contentType = connection.getHeaderField(CONTENT_TYPE);
         final int code = connection.getResponseCode();
         final String defaultContentType = getDefaultContentType(queryDir);
-        final boolean simple = code == SC_OK && equalsContentType(defaultContentType, contentType);
+        final Map<String, List<String>> fields = connection.getHeaderFields();
+        final Collection<String> cookies = fields.get(SET_COOKIE);
+        final boolean simple = code == SC_OK && equalsContentType(defaultContentType, contentType) && isEmpty(cookies);
         final File resourceFile = simple ? queryDir : getResourceFile(queryDir);
-        final String cookies = connection.getHeaderField(SET_COOKIE);
 
         copy(in, resourceFile);
 
@@ -230,7 +237,13 @@ public class CachingRESTProxy {
         }
 
         if (cookies != null) {
-            prps.put(SET_COOKIE, cookies);
+            int idx = 0;
+
+            for (final String cookie : cookies) {
+                final String key = getCookieKey(idx++);
+
+                prps.put(key, cookie);
+            }
         }
 
         prps.put(STATUS_PROPERTY, Integer.toString(code));
@@ -245,8 +258,8 @@ public class CachingRESTProxy {
         }
     }
 
-    private boolean cacheResponse(final String query, final File queryDir, final HttpServletRequest request,
-            final HttpServletResponse response) throws IOException {
+    private boolean cacheResponse(final String query, final File queryDir, final HttpServletRequest request)
+            throws IOException {
         if (backend == null) {
             return false;
         }
@@ -363,13 +376,8 @@ public class CachingRESTProxy {
             }
 
             @Override
-            Map<String, String> getHeaders() {
-                final String cookies = prps.getProperty(SET_COOKIE);
-                final Map<String, String> headers = new HashMap<String, String>();
-
-                headers.put(SET_COOKIE, cookies);
-
-                return headers;
+            Cookie[] getCookies() {
+                return CachingRESTProxy.this.getCookies(prps);
             }
 
             @Override
@@ -384,6 +392,31 @@ public class CachingRESTProxy {
                 return Integer.parseInt(status);
             }
         };
+    }
+
+    /**
+     * @param prps
+     * @return the cookies stored in the properties file
+     */
+    protected final Cookie[] getCookies(final Properties prps) {
+        final Collection<Cookie> cookies = new ArrayList<Cookie>();
+
+        for (int idx = 0;; idx++) {
+            final String key = getCookieKey(idx);
+            final String value = prps.getProperty(key);
+
+            if (value == null) {
+                break;
+            }
+
+            final Cookie cookie = parseCookie(value);
+
+            cookies.add(cookie);
+        }
+
+        final int size = cookies.size();
+
+        return cookies.toArray(new Cookie[size]);
     }
 
     private File getDirectory(final String query) {
@@ -431,7 +464,7 @@ public class CachingRESTProxy {
             }
 
             @Override
-            Map<String, String> getHeaders() {
+            Cookie[] getCookies() {
                 return null;
             }
 
@@ -459,7 +492,7 @@ public class CachingRESTProxy {
         final File queryDir = getDirectory(query);
 
         while (!handleCachedResponse(queryDir, response)) {
-            if (!cacheResponse(query, queryDir, request, response)) {
+            if (!cacheResponse(query, queryDir, request)) {
                 response.setStatus(SC_NOT_FOUND);
                 return;
             }
@@ -476,22 +509,54 @@ public class CachingRESTProxy {
         final int status = cached.getStatus();
         final String mimeType = cached.getContentType();
         final File resource = cached.getResource();
-        final Map<String, String> headers = cached.getHeaders();
+        final Cookie[] cookies = cached.getCookies();
 
-        if (headers != null) {
-            final Collection<Entry<String, String>> entries = headers.entrySet();
-
-            for (final Entry<String, String> entry : entries) {
-                final String name = entry.getKey();
-                final String value = entry.getValue();
-
-                response.setHeader(name, value);
+        if (cookies != null) {
+            for (final Cookie cookie : cookies) {
+                response.addCookie(cookie);
             }
         }
         response.setStatus(status);
         respond(mimeType, response, resource);
 
         return true;
+    }
+
+    private boolean isEmpty(final Collection<String> cookies) {
+        if (cookies == null) {
+            return true;
+        }
+
+        final int size = cookies.size();
+
+        return size == 0;
+    }
+
+    private Cookie parseCookie(final String value) {
+        final StringTokenizer izer = new StringTokenizer(value, ";");
+        final String _value = izer.nextToken();
+        final int pos = _value.indexOf('=');
+        final String name = _value.substring(0, pos);
+        final String val = _value.substring(pos + 1);
+        final Cookie cookie = new Cookie(name, val);
+
+        while (izer.hasMoreTokens()) {
+            final String token = izer.nextToken();
+            final int _pos = token.indexOf('=');
+            final String directive = _pos == -1 ? token : token.substring(0, _pos);
+            final String _val = _pos == -1 ? null : token.substring(_pos + 1);
+
+            if ("Domain".equalsIgnoreCase(directive)) {
+                cookie.setDomain(_val);
+            } else if ("Secure".equalsIgnoreCase(directive)) {
+                cookie.setSecure(true);
+            } else if ("Path".equalsIgnoreCase(directive)) {
+                cookie.setPath(_val);
+            }
+
+        }
+
+        return cookie;
     }
 
     /**

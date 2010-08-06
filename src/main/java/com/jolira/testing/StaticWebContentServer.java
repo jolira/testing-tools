@@ -128,7 +128,7 @@ public class StaticWebContentServer extends WebServerEmulator {
 
         final String mimeType = getMimeType(mapping);
 
-        this.respond(mimeType, response, mapping);
+        respond(mimeType, response, mapping);
     }
 
     /**
