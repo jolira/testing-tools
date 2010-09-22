@@ -14,8 +14,8 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.security.SslSocketConnector;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ssl.SslSocketConnector;
 
 /**
  * Creates a server emulator that supports secure (https) communication.

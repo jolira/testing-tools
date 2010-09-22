@@ -25,8 +25,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.eclipse.jetty.server.Server;
 import org.junit.Test;
-import org.mortbay.jetty.Server;
 
 /**
  * @author jfk

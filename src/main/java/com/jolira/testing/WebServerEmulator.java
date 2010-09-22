@@ -17,9 +17,10 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.mortbay.jetty.Connector;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.handler.AbstractHandler;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 
 /**
  * Manages a little server, which can be launched at the beginning of unit tests and stopped at the end of it, such as
@@ -282,10 +283,10 @@ public abstract class WebServerEmulator {
         for (int _port = PORT;; _port++) {
             server = createServer(_port);
 
-            server.addHandler(new AbstractHandler() {
+            server.setHandler(new AbstractHandler() {
                 @Override
-                public void handle(final String target, final HttpServletRequest request,
-                        final HttpServletResponse response, final int dispatch) throws IOException, ServletException {
+                public void handle(final String target, final Request baseRequest, final HttpServletRequest request,
+                        final HttpServletResponse response) throws IOException, ServletException {
                     WebServerEmulator.this.handle(target, request, response);
                 }
             });
