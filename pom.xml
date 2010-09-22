@@ -8,7 +8,7 @@
   <artifactId>testing-tools</artifactId>
   <version>1.2.3-SNAPSHOT</version>
   <name>Jolira Testing Tools</name>
-  <description>Tools that for automated testing of clients of web-services. This package includes a simple HTTP Server Simulator based on Jetty, which supports SSL. </description>
+  <description>Tools that for automated testing. This package includes a simple HTTP Server Simulator based on Jetty, which supports SSL. </description>
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
