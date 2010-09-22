@@ -6,7 +6,7 @@
     <version>1.0.9</version>
   </parent>
   <artifactId>testing-tools</artifactId>
-  <version>1.2.3-SNAPSHOT</version>
+  <version>1.2.3</version>
   <name>Jolira Testing Tools</name>
   <description>Tools that for automated testing. This package includes a simple HTTP Server Simulator based on Jetty, which supports SSL. </description>
   <dependencies>
@@ -42,4 +42,10 @@
     	<scope>compile</scope>
     </dependency>
   </dependencies>
+
+  <scm>
+    <connection>scm:svn:https://jolira-tools.googlecode.com/svn/superpom/tags/testing-tools-1.2.3</connection>
+    <developerConnection>scm:svn:https://jolira-tools.googlecode.com/svn/superpom/tags/testing-tools-1.2.3</developerConnection>
+    <url>https://jolira-tools.googlecode.com/svn/superpom/tags/testing-tools-1.2.3</url>
+  </scm>
 </project>
