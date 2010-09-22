@@ -11,21 +11,27 @@ package com.jolira.testing;
 
 import static com.jolira.testing.TestUtils.BASEDIR_PROP;
 import static com.jolira.testing.TestUtils.getBaseDir;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * @author jfk
  */
-public class TestUtilsTest extends TestCase {
+public class TestUtilsTest {
     private static final File TEST_BASEDIR_VAL = new File("/tmp/test");
 
     /**
      * Test method for {@link TestUtils#getBaseDir(Class)}.
      */
+    @Test
     public void testGetBasedir() {
         final Properties properties = System.getProperties();
         final String org = properties.getProperty(BASEDIR_PROP);
@@ -48,5 +54,26 @@ public class TestUtilsTest extends TestCase {
                 properties.remove(BASEDIR_PROP);
             }
         }
+    }
+
+    /**
+     * @throws IOException
+     */
+    @Test
+    public void testGetResourceAsStream() throws IOException {
+        final InputStream in = TestUtils.getResourceAsStream(TestUtils.class, "/response.xml");
+
+        assertNotNull(in);
+        in.close();
+    }
+
+    /**
+     * @throws IOException
+     */
+    @Test
+    public void testGetResourceNotFound() throws IOException {
+        final InputStream in = TestUtils.getResourceAsStream(TestUtils.class, "/notfound.xml");
+
+        assertNull(in);
     }
 }

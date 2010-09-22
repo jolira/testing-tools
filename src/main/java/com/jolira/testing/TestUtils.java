@@ -9,6 +9,9 @@
 package com.jolira.testing;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.net.URL;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
@@ -53,6 +56,53 @@ public class TestUtils {
         final File target = _classes.getParentFile();
 
         return target.getParentFile();
+    }
+
+    private static String getNormalizedFileName(final Class<?> clazz, final String file) {
+        if (file.startsWith("/")) {
+            return file.substring(1);
+        }
+
+        final Package pkg = clazz.getPackage();
+        final String name = pkg.getName();
+        final String path = name.replace('.', '/');
+
+        return path + '/' + file;
+    }
+
+    /**
+     * Finds a resource given a name. First tries {@link Class#getResourceAsStream(String)}. If this call does not find
+     * the resource, the base directory is searched using {@link #getBaseDir(Class)}. The resources is first searched as
+     * ${basedir}/src/main/resources/${file} and then as ${basedir}/src/test/resources/${file}.
+     * 
+     * @param clazz
+     *            the class
+     * @param file
+     *            the file
+     * @return the resource or {literal null), if not found
+     * @throws FileNotFoundException
+     */
+    public static InputStream getResourceAsStream(final Class<?> clazz, final String file) throws FileNotFoundException {
+        final InputStream in = clazz.getResourceAsStream(file);
+
+        if (in != null) {
+            return in;
+        }
+
+        final File baseDir = getBaseDir(clazz);
+        final String[] dirs = new String[] { "src/main/resources", "src/test/resources" };
+
+        for (final String dir : dirs) {
+            final File resources = new File(baseDir, dir);
+            final String normalized = getNormalizedFileName(clazz, file);
+            final File _file = new File(resources, normalized);
+
+            if (_file.isFile()) {
+                return new FileInputStream(_file);
+            }
+        }
+
+        return null;
     }
 
     private TestUtils() {
