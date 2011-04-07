@@ -38,4 +38,9 @@
       <version>7.3.1.v20110307</version>
     </dependency>
   </dependencies>
+  <scm>
+    <connection>scm:svn:https://jolira-tools.googlecode.com/svn/testing-tools/trunkt</connection>
+    <developerConnection>scm:svn:https://jolira-tools.googlecode.com/svn/testing-tools/trunk</developerConnection>
+    <url>https://jolira-tools.googlecode.com/svn/testing-tools/trunk</url>
+  </scm>
 </project>
