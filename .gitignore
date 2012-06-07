@@ -1,0 +1,14 @@
+target
+.settings
+.project
+.classpath
+*.log
+*.log.*
+.DS_Store
+src/*/bin/**
+*.orig
+*.BASE.*
+*.LOCAL.*
+*.BACKUP.*
+*.REMOTE.*
+src/MWTux/WebContent/WEB-INF/classes/**
