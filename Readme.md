@@ -1,4 +1,4 @@
-testing-tools
+testing-tools [<img src="https://secure.travis-ci.org/jolira/testing-tools.png" />](http://travis-ci.org/#!/jolira/testing-tools)
 =================
 
 Some convenient testing tools for people working with Maven and Eclipse. There is a tool
